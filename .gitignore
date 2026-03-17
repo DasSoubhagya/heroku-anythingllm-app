@@ -2,3 +2,4 @@
 anythingllm.env
 anythingllm_storage/
 *.db
+postgres/.env

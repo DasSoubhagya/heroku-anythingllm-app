@@ -1,0 +1,5 @@
+# Daily pg_dumpall at 02:00 UTC
+0 2 * * * /scripts/backup.sh >> /var/log/backup.log 2>&1
+
+# Weekly pg_basebackup on Sundays at 03:00 UTC
+0 3 * * 0 /scripts/basebackup.sh >> /var/log/backup.log 2>&1

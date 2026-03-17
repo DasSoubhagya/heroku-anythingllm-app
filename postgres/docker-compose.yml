@@ -1,0 +1,56 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: shared-postgres
+    restart: unless-stopped
+    ports:
+      - "${PG_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${PG_USER:-anythingllm}
+      POSTGRES_PASSWORD: ${PG_PASSWORD:?Set PG_PASSWORD in .env}
+      POSTGRES_DB: ${PG_DB:-anythingllm}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-anythingllm}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - pgnet
+
+  backup:
+    build:
+      context: ./backup
+    container_name: pg-backup
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: ${PG_USER:-anythingllm}
+      PGPASSWORD: ${PG_PASSWORD:?Set PG_PASSWORD in .env}
+      PGDATABASE: ${PG_DB:-anythingllm}
+      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID:?Set R2_ACCESS_KEY_ID in .env}
+      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY:?Set R2_SECRET_ACCESS_KEY in .env}
+      R2_ENDPOINT: ${R2_ENDPOINT:?Set R2_ENDPOINT in .env}
+      R2_BUCKET: ${R2_BUCKET:?Set R2_BUCKET in .env}
+      RETENTION_DAYS: ${RETENTION_DAYS:-7}
+    volumes:
+      - pg_data:/var/lib/postgresql/data:ro
+    networks:
+      - pgnet
+
+volumes:
+  pg_data:
+    driver: local
+
+networks:
+  pgnet:
+    driver: bridge
