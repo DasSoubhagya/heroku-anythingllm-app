@@ -6,8 +6,6 @@ ENV_FILE="/app/server/.env"
 
 mkdir -p "$STORAGE_DIR"
 
-# Write environment variables to .env file for AnythingLLM to read
-# This bridges Heroku config vars into AnythingLLM's expected .env format
 echo "STORAGE_DIR=${STORAGE_DIR}" > "$ENV_FILE"
 
 ENV_VARS=(
@@ -35,10 +33,18 @@ for var in "${ENV_VARS[@]}"; do
   fi
 done
 
-# Heroku provides $PORT; AnythingLLM listens on 3001 by default.
-# Use socat to forward Heroku's $PORT to 3001 if PORT != 3001
+# Heroku provides $PORT; AnythingLLM listens on 3001.
+# Use Node.js (already available) to proxy Heroku's port to 3001.
 if [ -n "$PORT" ] && [ "$PORT" != "3001" ]; then
-  socat TCP-LISTEN:${PORT},fork TCP:127.0.0.1:3001 &
+  node -e "
+    const net = require('net');
+    net.createServer(c => {
+      const s = net.connect(3001, '127.0.0.1');
+      c.pipe(s); s.pipe(c);
+      c.on('error', () => s.destroy());
+      s.on('error', () => c.destroy());
+    }).listen(${PORT}, () => console.log('Port proxy: ${PORT} -> 3001'));
+  " &
 fi
 
 cd /app/server
