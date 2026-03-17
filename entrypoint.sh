@@ -48,4 +48,6 @@ if [ -n "$PORT" ] && [ "$PORT" != "3001" ]; then
 fi
 
 cd /app/server
+npx prisma generate --schema=./prisma/schema.prisma 2>/dev/null || true
+npx prisma migrate deploy --schema=./prisma/schema.prisma 2>/dev/null || true
 exec node index.js
