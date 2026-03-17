@@ -1,10 +1,32 @@
 version: "3.9"
 
 services:
+  certbot:
+    image: certbot/certbot:latest
+    container_name: pg-certbot
+    volumes:
+      - certs:/etc/letsencrypt
+      - certbot_www:/var/www/certbot
+    entrypoint: /bin/sh -c "
+      trap exit TERM;
+      certbot certonly --standalone --non-interactive --agree-tos
+        --email ${CERT_EMAIL:?Set CERT_EMAIL in .env}
+        -d ${PG_DOMAIN:?Set PG_DOMAIN in .env}
+        --preferred-challenges http;
+      while :; do
+        certbot renew --quiet;
+        sleep 12h;
+      done"
+    ports:
+      - "80:80"
+    restart: unless-stopped
+
   postgres:
     image: pgvector/pgvector:pg16
     container_name: shared-postgres
     restart: unless-stopped
+    depends_on:
+      - certbot
     ports:
       - "${PG_PORT:-5432}:5432"
     environment:
@@ -13,13 +35,15 @@ services:
       POSTGRES_DB: ${PG_DB:-anythingllm}
     volumes:
       - pg_data:/var/lib/postgresql/data
+      - certs:/etc/letsencrypt:ro
       - ./init:/docker-entrypoint-initdb.d:ro
+      - ./ssl-setup.sh:/docker-entrypoint-initdb.d/01-ssl-setup.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-anythingllm}"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 60s
     networks:
       - pgnet
 
@@ -49,6 +73,10 @@ services:
 
 volumes:
   pg_data:
+    driver: local
+  certs:
+    driver: local
+  certbot_www:
     driver: local
 
 networks:
