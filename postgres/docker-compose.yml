@@ -27,8 +27,7 @@ services:
       POSTGRES_DB: ${PG_DB:-anythingllm}
     volumes:
       - pg_data:/var/lib/postgresql/data
-      - ./init:/docker-entrypoint-initdb.d:ro
-      - ./pg-ssl-init.sh:/docker-entrypoint-initdb.d/01-ssl-init.sh:ro
+      - ./init:/docker-entrypoint-initdb.d
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${PG_USER:-anythingllm}"]
       interval: 10s
