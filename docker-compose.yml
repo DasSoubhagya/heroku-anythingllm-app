@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  anythingllm:
+    image: mintplexlabs/anythingllm:latest
+    container_name: anythingllm
+    ports:
+      - "${ANYTHINGLLM_PORT:-3001}:3001"
+    cap_add:
+      - SYS_ADMIN
+    volumes:
+      - anythingllm_storage:/app/server/storage
+      - ./anythingllm.env:/app/server/.env
+    environment:
+      - STORAGE_DIR=/app/server/storage
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  anythingllm_storage:
+    driver: local

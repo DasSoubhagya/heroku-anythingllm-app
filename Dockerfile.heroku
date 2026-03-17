@@ -1,0 +1,14 @@
+FROM mintplexlabs/anythingllm:latest
+
+ENV STORAGE_DIR="/app/server/storage"
+
+RUN apt-get update -qq && \
+    apt-get install -y -qq socat > /dev/null 2>&1 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    mkdir -p /app/server/storage && \
+    touch /app/server/storage/anythingllm.db
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
