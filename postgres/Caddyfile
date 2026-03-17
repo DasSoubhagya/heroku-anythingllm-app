@@ -1,0 +1,12 @@
+# Caddy reverse proxy -- auto SSL via Let's Encrypt
+# Add new services here as subdomains
+
+# Mem0 (uncomment when ready to deploy)
+# mem0.{$PG_DOMAIN} {
+#     reverse_proxy mem0:8080
+# }
+
+# Placeholder: responds with 200 OK to confirm Caddy is running
+{$PG_DOMAIN} {
+    respond "OK" 200
+}
