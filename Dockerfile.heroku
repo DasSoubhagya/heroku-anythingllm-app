@@ -1,4 +1,4 @@
-FROM mintplexlabs/anythingllm:latest
+FROM mintplexlabs/anythingllm:pg
 
 USER root
 
